@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Solution"
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- http://msbuildtasks.tigris.org/ -->
+    <Import Project="$(MSBuildExtensionsPath)/MSBuildCommunityTasks/MSBuild.Community.Tasks.Targets"/>
+    <!-- http://msbuildextensionpack.codeplex.com/ -->
+    <!-- NOTE: For whatever reason MSBuild can't find this in /Program Files/MSBuild/ so it
+            needs to be copied to /Program Files (x86)/MSBuild/ in order to work.  JF-->
+    <Import Project="$(MSBuildExtensionsPath)/ExtensionPack/4.0/MSBuild.ExtensionPack.tasks"/>
+    <Import Project="build.publish.targets"/>
+
+    <PropertyGroup>
+        <configuration Condition=" '$(configuration)' == '' ">Debug</configuration>
+        <increment Condition=" '$(increment)' == '' ">false</increment>
+        <env Condition=" '$(env)' == '' ">prod</env>
+        <solutionMetadataFilePath>$(solutionDirectory)$(solutionFileName).$(solutionMetadataFileExtension)</solutionMetadataFilePath>
+        <aboutFilePath>$(solutionDirectory)$(aboutFileName)</aboutFilePath>
+        <tempPublishDirectory>$(solutionDirectory)\publish</tempPublishDirectory>
+        <buildsDirectory>$(solutionDirectory)..\builds</buildsDirectory>
+        <deployDirectory>$(tempPublishDirectory)..\deploy</deployDirectory>
+    </PropertyGroup>
+
+    <Target Name="Solution">
+        <Message Text="- - - - - - - - - RUNNING SOLUTION BUILD - - - - - - - - -" />
+
+        <CallTarget Targets="ShowParameters"></CallTarget>
+
+        <CallTarget Targets="Version" />
+
+        <CallTarget Targets="Build" />
+
+        <CallTarget Targets="Publish" />
+
+        <!-- Deploy? -->
+
+        <!-- Add/Commit to SVN & tag? -->
+
+    </Target>
+
+    <Target Name="Version">
+        <Message Text="- - - - - - - - - VERSION - - - - - - - - -" />
+        <CallTarget Targets="IncrementBuildNumber" Condition="$(increment)" />
+        <CallTarget Targets="BuildAboutFile" />
+        <CallTarget Targets="GetVersionInfo" />
+    </Target>
+
+    <Target Name="Build">
+        <Message Text="- - - - - - - - - BUILD - - - - - - - - -" />
+        <MSBuild Projects="$(solutionFileName)" Targets="Clean;Rebuild" Properties="Configuration=$(configuration)" ContinueOnError="false" />
+    </Target>
+
+    <Target Name="Publish" DependsOnTargets="Version">
+        <Message Text="- - - - - - - - - PUBLISH - - - - - - - - -" />
+        <CallTarget Targets="PrepTempPublishDirectory" />
+        <CallTarget Targets="PublishProjects" />
+        <CallTarget Targets="PrepBuildsDirectory" />
+        <CallTarget Targets="MoveToBuildsDirectory" />
+
+        <Message Text="COMPRESS..." />
+        <CallTarget Targets="PackageAsZip" />
+
+        <Message Text="CLEAN UP..." />
+        <CallTarget Targets="RemoveTempPublishDirectory" />
+    </Target>
+
+    <Target Name="ShowParameters">
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="solutionDirectory: $(solutionDirectory)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="solutionFileName: $(solutionFileName)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="solutionMetadataFilePath: $(solutionMetadataFilePath)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="configuration: $(configuration)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="buildsDirectory: $(buildsDirectory)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="deployDirectory: $(deployDirectory)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+    </Target>
+
+    <Target Name="IncrementBuildNumber">
+        <Exec Command="$(solutionDirectory)\__lib\nversion /RunMode:IncrementBuild /MetadataFileName:&quot;$(solutionMetadataFilePath)&quot;"></Exec>
+    </Target>
+
+    <Target Name="BuildAboutFile">
+        <Exec Command="$(solutionDirectory)\__lib\nversion /RunMode:BuildAbout /MetadataFileName:&quot;$(solutionMetadataFilePath)&quot; /OutputFileName:&quot;$(aboutFilePath)&quot; /ConfigurationName:&quot;$(configuration)&quot;"></Exec>
+    </Target>
+
+    <Target Name="GetVersionInfo">
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="Version Info" />
+        
+        <!-- NOTE: This was helpful: http://stackoverflow.com/questions/2688239/how-to-use-xmlpeek-task -->
+        <XmlPeek Query="/Application/Version/Sortable/text()" XmlInputPath="$(solutionDirectory)\about.xml">
+            <Output TaskParameter="Result" ItemName="sortableVersionNode" />
+        </XmlPeek>
+
+        <PropertyGroup>
+            <sortableVersion>@(sortableVersionNode)</sortableVersion>
+        </PropertyGroup>
+
+        <Message Text="sortableVersion: $(sortableVersion)" />
+
+        <XmlPeek Query="/Application/Title/text()" XmlInputPath="$(solutionDirectory)\about.xml">
+            <Output TaskParameter="Result" ItemName="applicationTitleNode" />
+        </XmlPeek>
+        
+        <PropertyGroup>
+            <applicationTitle>@(applicationTitleNode)</applicationTitle>
+        </PropertyGroup>
+
+        <Message Text="applicationTitle: $(applicationTitle)" />
+
+        <XmlPeek Query="/Application/Build/ShortName/text()" XmlInputPath="$(solutionDirectory)\about.xml">
+            <Output TaskParameter="Result" ItemName="shortNameNode" />
+        </XmlPeek>
+        
+        <PropertyGroup>
+            <shortName>@(shortNameNode)</shortName>
+        </PropertyGroup>
+
+        <Message Text="shortName: $(shortName)" />
+    </Target>
+
+    <Target Name="PrepTempPublishDirectory">
+        <RemoveDir Directories="$(tempPublishDirectory)" ContinueOnError="true" />
+
+        <MakeDir Directories="$(tempPublishDirectory)" />
+
+        <Copy SourceFiles="$(solutionDirectory)\about.xml" DestinationFolder="$(tempPublishDirectory)" />
+    </Target>
+
+    <Target Name="PrepBuildsDirectory">
+        <PropertyGroup>
+            <currentBuildDirectory>$(buildsDirectory)\$(applicationTitle) ($(sortableVersion))</currentBuildDirectory>
+        </PropertyGroup>
+
+        <RemoveDir Directories="$(currentBuildDirectory)" ContinueOnError="true" />
+
+        <MakeDir Directories="$(currentBuildDirectory)" />
+    </Target>
+
+    <Target Name="MoveToBuildsDirectory" DependsOnTargets="PrepBuildsDirectory">
+        <ItemGroup>
+            <buildsSourceFiles Include="$(tempPublishDirectory)\**\*.*" Exclude="$(tempPublishDirectory)\**\.svn\**" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(buildsSourceFiles)"
+            DestinationFiles="@(buildsSourceFiles->'$(currentBuildDirectory)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+
+    <Target Name="PackageAsZip" DependsOnTargets="MoveToBuildsDirectory">
+        <PropertyGroup>
+            <zipFileName>$(deployDirectory)\$(shortName).zip</zipFileName>
+        </PropertyGroup>
+
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+        <Message Text="zipFileName: $(zipFileName)" />
+        <Message Text="- - - - - - - - - - - - - - - - - - " />
+
+        <ItemGroup>
+            <targetFileSet Include="$(tempPublishDirectory)\**\*.*" Exclude="*.zip" />
+        </ItemGroup>
+
+        <!-- NOTE: The zip task is overly sensitive to double slashes in a file path and will create a directory named "_"
+                if it sees one.  For example if you pass in the path "c:\myfiles\\forzip\**\*.*" for the Files argument
+                it will create a zip file containing the path \myfiles\_\forzip\.  Also, if you don't supply a 
+                WorkingDirectory argument it will root the whole thing all the way back to the drive letter.  Your 
+                resulting zip file will have a *very* deep folder structure.  JF
+        -->
+        <Zip Files="@(targetFileSet)" WorkingDirectory="$(tempPublishDirectory)" ZipFileName="$(zipFileName)" />
+    </Target>
+
+    <Target Name="RemoveTempPublishDirectory" DependsOnTargets="PrepTempPublishDirectory">
+        <RemoveDir Directories="$(tempPublishDirectory)" ContinueOnError="true" />
+    </Target>
+</Project>

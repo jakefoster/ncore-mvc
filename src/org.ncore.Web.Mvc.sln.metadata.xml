@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Application solution="org.ncore.sln">
+  <Title>org.ncore</Title>
+  <Description>A library of commonly used classes and extension for the .NET platform.</Description>
+  <Company>Cleverbox Inc.</Company>
+  <Product>org.ncore</Product>
+  <Copyright>Copyright © 2004-2014, Cleverbox Inc. - All rights reserved.</Copyright>
+  <Trademark></Trademark>
+  <Culture></Culture>
+  <Version>
+    <Label>2014 R1</Label>
+    <Major>01</Major>
+    <Minor>07</Minor>
+    <Patch>05</Patch>
+    <Build>241</Build>
+  </Version>
+  <Configuration>
+    <Label>Beta</Label>
+  </Configuration>
+  <Build>
+    <Label>Release</Label>
+  </Build>
+</Application>

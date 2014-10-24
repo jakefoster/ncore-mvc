@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" 
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <Target Name="PublishProjects">
+        <CallTarget Targets="Publish-org_ncore" />
+        <CallTarget Targets="Publish-org_ncore_Web_Mvc" />
+    </Target>
+
+    <Target Name="Publish-org_ncore" DependsOnTargets="PrepTempPublishDirectory">
+        <PropertyGroup>
+            <targetProject>org.ncore</targetProject>
+            <binariesDirectory>$(solutionDirectory)\$(targetProject)\bin\$(configuration)</binariesDirectory>
+            <outputDirectory>$(tempPublishDirectory)\$(targetProject)</outputDirectory>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <librariesSourceFiles Include="$(binariesDirectory)\**\*.*" Exclude="$(binariesDirectory)\**\.hg\**;$(binariesDirectory)\**\*.exe" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(librariesSourceFiles)"
+            DestinationFiles="@(librariesSourceFiles->'$(outputDirectory)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+
+    <Target Name="Publish-org_ncore_Web_Mvc" DependsOnTargets="PrepTempPublishDirectory">
+        <PropertyGroup>
+            <targetProject>org.ncore.Web.Mvc</targetProject>
+            <binariesDirectory>$(solutionDirectory)\$(targetProject)\bin\$(configuration)</binariesDirectory>
+            <outputDirectory>$(tempPublishDirectory)\$(targetProject)</outputDirectory>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <librariesSourceFiles Include="$(binariesDirectory)\**\*.*" Exclude="$(binariesDirectory)\**\.hg\**;$(binariesDirectory)\**\*.exe" />
+        </ItemGroup>
+
+        <Copy SourceFiles="@(librariesSourceFiles)"
+            DestinationFiles="@(librariesSourceFiles->'$(outputDirectory)\%(RecursiveDir)%(Filename)%(Extension)')" />
+    </Target>
+    
+</Project>
