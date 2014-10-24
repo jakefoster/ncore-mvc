@@ -41,9 +41,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Moq.4.2.1409.1722\lib\net40\Moq.dll</HintPath>
     </Reference>
-    <Reference Include="org.ncore, Version=1.7.5.241, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="org.ncore, Version=1.7.5.242, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\ncore-foundation.1.7.5.241\lib\net452\org.ncore.dll</HintPath>
+      <HintPath>..\packages\ncore-foundation.1.7.5.242\lib\net452\org.ncore.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
